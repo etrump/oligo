@@ -1,0 +1,662 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN">
+<html xmlns:mwsh="http://www.mathworks.com/namespace/mcode/v1/syntaxhighlight.dtd">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   
+      <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      -->
+      <title>runMe</title>
+      <meta name="generator" content="MATLAB 7.6">
+      <meta name="date" content="2010-04-10">
+      <meta name="m-file" content="runMe"><style>
+
+body {
+  background-color: white;
+  margin:10px;
+}
+
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows. */ 
+p,h1,h2,div.content div {
+  max-width: 600px;
+  /* Hack for IE6 */
+  width: auto !important; width: 600px;
+}
+
+pre.codeinput {
+  background: #EEEEEE;
+  padding: 10px;
+}
+@media print {
+  pre.codeinput {word-wrap:break-word; width:100%;}
+} 
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.codeoutput {
+  color: #666666;
+  padding: 10px;
+}
+
+pre.error {
+  color: red;
+}
+
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+  </style></head>
+   <body>
+      <div class="content"><pre class="codeinput">clear
+clc
+close <span class="string">all</span>
+<span class="keyword">global</span> modelAtm trackOmega trackCov
+<span class="keyword">global</span> Tagg CpT DpT NumConcT Struct
+modelAtm.NumBins=4;
+n = modelAtm.NumBins;
+
+
+
+TimeVector = [0 10]*3600;
+EmitTime = 2*3600;
+<span class="comment">%modelAtm.AgingResTime = 5; %hr  %NO aging when off</span>
+
+FinalTime = TimeVector(length(TimeVector));
+TotalPop = length(TimeVector);
+modelAtm.Pop = TotalPop;
+modelAtm.total_cov = 0;
+
+trackOmega = zeros(1,modelAtm.Pop);
+trackCov = zeros(1,4);
+
+LoadAtmos;
+ROG = (1e-4)/5; <span class="comment">% reacting organic rate [=] ug/m3-s</span>
+EmitBin = 1;
+
+LoadSOAProps(ROG, EmitTime, EmitBin);
+SulfMassConc = eps; <span class="comment">%Sulf concentration negligible</span>
+LoadSulfProps(SulfMassConc);
+
+BGBin = 3; <span class="comment">%C* bin of initial particles; 1 is C*=1e-2, 2 is C* =1e-1, 3 is C*=1e0, 4 is C*=1</span>
+TotalSusp = 2;
+TagSusp = 2; <span class="comment">%1 = specify #/m3    2=specify ug/m3</span>
+LoadSuspendedPopulation(BGBin,TotalSusp,TagSusp);
+LoadPopulationProps(1);
+TotalOnWall = 1;
+TagOnWall = 2; <span class="comment">%1 = specify #/m3    2=specify ug/m3</span>
+
+<span class="comment">%This block of code is just to read in the ICs that are already specified</span>
+<span class="comment">%(LoadSuspendedParticles)------------------</span>
+j=1;
+PopString = int2str(j);
+<span class="keyword">for</span> i =1:n
+  eval([<span class="string">'Cp0(i) = modelAtm.Pop'</span> PopString <span class="string">'.Cp0(i);'</span>])
+<span class="keyword">end</span>
+eval([<span class="string">'Dp0(j) = modelAtm.Pop'</span> PopString <span class="string">'.Dp0;'</span>])
+<span class="comment">%Dp0 = Dp0nm*1e-9;</span>
+eval([<span class="string">'MSulf0(j) = modelAtm.Pop'</span> PopString <span class="string">'.MSulf0;'</span>])
+eval([<span class="string">'NumConc0(j) = modelAtm.Pop'</span> PopString <span class="string">'.NumConc0;'</span>])
+<span class="comment">%-----------------</span>
+
+Cp0_new = eps*ones(1,n);
+Yagg = [];
+Tagg = [];
+Cv0 = modelAtm.Cv0;
+
+<span class="comment">%total_cov = 0;</span>
+<span class="keyword">for</span> i=1:TotalPop-1
+    Pop = 1+i;
+    PopString = int2str(Pop);
+
+    eval([<span class="string">'modelAtm.Pop'</span> PopString <span class="string">'.Dp0 = Dp0(1);'</span>])
+    <span class="comment">%eval(['modelAtm.Pop' PopString '.MSulf0 = 0;'])</span>
+
+    LoadWallPopulation(Pop,BGBin,TotalOnWall,TagOnWall);
+    LoadPopulationProps(Pop);
+   <span class="comment">% if Pop==2</span>
+   <span class="comment">%    BGCvPlus = LoadEqmVapors(modelAtm.Pop2.Cp0);</span>
+   <span class="comment">%    Cv0 = modelAtm.Cv0+BGCvPlus;</span>
+   <span class="comment">%    modelAtm.Cv0 = Cv0;</span>
+   <span class="comment">% end</span>
+
+    eval([<span class="string">'NumConc = modelAtm.Pop'</span> PopString <span class="string">'.NumConc0;'</span>])
+    eval([<span class="string">'Cp0_new = modelAtm.Pop'</span> PopString <span class="string">'.Cp0;'</span>])
+
+
+    Cp0 = [Cp0 Cp0_new];
+    Dp0 = [Dp0 Dp0(1)];
+    MSulf0 = [MSulf0 eps];
+    NumConc0 = [NumConc0 NumConc];
+
+
+    tspan = [TimeVector(i) TimeVector(i+1)];
+    y0=[Cv0 Cp0 Dp0 MSulf0 NumConc0];
+
+    [T,Y] = Main3(Pop,tspan,y0);
+
+    <span class="keyword">if</span> i==1
+        Yagg = Y;
+    <span class="keyword">elseif</span> i&gt;1
+        Yagg = [Yagg zeros(length(Yagg(:,1)),n+3); Y];
+    <span class="keyword">end</span>
+
+    Tagg = [Tagg; T];
+    EndIndex(Pop) = length(Tagg);
+    <span class="comment">%EndIndex(1) = EndIndex(2);</span>
+    Yfinal = Yagg(length(Tagg),:);
+
+
+    <span class="comment">%Save final values of integration variables after run: these will be initial conditions</span>
+    <span class="comment">%for the next population</span>
+
+    Cv0 = Yfinal(1:n);
+    Cp0 = Yfinal((n+1):(n+n*Pop));
+    In = length(Cp0);
+    <span class="keyword">for</span> i = 1:n
+        Cp0_new(i) = Cp0(In+i-5);
+    <span class="keyword">end</span>
+    Dp0 = Yfinal(n*(Pop+1)+1:n*(Pop+1)+Pop);
+    MSulf0 = Yfinal(n*(Pop+1)+Pop+1:n*(Pop+1)+2*Pop);
+    NumConc0 = Yfinal(n*(Pop+1)+Pop*2+1:n*(Pop+1)+3*Pop);
+
+<span class="keyword">end</span>
+
+
+
+<span class="comment">%modelAtm.Dpf = Dpf;</span>
+EndIndex(1) = 0;
+
+CpT = zeros(0,n); DpT = zeros(0,1); MSulfT = zeros(0,1); NumConcT = zeros(0,1);
+
+CvT = Yagg(:,(1:n));
+
+<span class="keyword">for</span> p = 2:Pop
+   Cp_new = Yagg(EndIndex(p-1)+1:EndIndex(p),n+1:(p+1)*n);
+   Dp_new = Yagg(EndIndex(p-1)+1:EndIndex(p), n*(p+1)+1:n*(p+1)+p);
+   MSulf_new = Yagg(EndIndex(p-1)+1:EndIndex(p), n*(p+1)+p+1:n*(p+1)+2*p);
+   NumConc_new = Yagg(EndIndex(p-1)+1:EndIndex(p), n*(p+1)+2*p+1:n*(p+1)+3*p);
+
+   CpT = [CpT zeros(EndIndex(p-1),n); Cp_new];
+   DpT = [DpT zeros(EndIndex(p-1),1); Dp_new];
+   MSulfT = [MSulfT zeros(EndIndex(p-1),1); MSulf_new];
+   NumConcT = [NumConcT zeros(EndIndex(p-1),1); NumConc_new];
+   <span class="keyword">if</span> Pop&gt;2
+    omegaCalc(Pop) = (DpT(EndIndex(Pop),Pop)^3-DpT(EndIndex(Pop-1)+1,Pop)^3)/(DpT(EndIndex(Pop),1)^3-DpT(EndIndex(Pop-1)+1,1)^3);
+    <span class="keyword">else</span>
+        omegaCalc(2) = (DpT(EndIndex(2),2)^3-DpT(1,2)^3)/(DpT(EndIndex(2),1)^3-DpT(1,1)^3);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+omegaOverall = (DpT(EndIndex(modelAtm.Pop),2)^3-DpT(1,2)^3)/(DpT(EndIndex(modelAtm.Pop),1)^3-DpT(1,1)^3);
+
+
+
+<span class="comment">%Check mass balance--------------</span>
+TotalSuspMSOA = 0;
+TotalWallMSOA = 0;
+TotalVap = 0;
+TotalWallNumConc = 0;
+
+<span class="keyword">for</span> i = 2:TotalPop
+   TotalWallNumConc = TotalWallNumConc + NumConcT(length(NumConcT),i);
+<span class="keyword">end</span>
+
+<span class="keyword">for</span> j=1:n
+    <span class="keyword">for</span> i = 2:TotalPop
+        TotalWallMSOA = TotalWallMSOA + CpT(length(CpT),(i-1)*n+j);
+    <span class="keyword">end</span>
+    TotalSuspMSOA = TotalSuspMSOA + CpT(length(CpT),j);
+    TotalVap = TotalVap + CvT(length(CpT),j);
+<span class="keyword">end</span>
+
+MassBal = ROG*sum(modelAtm.SOA.alphaProd)*modelAtm.EmitTime+modelAtm.MSOATot0-TotalWallMSOA-TotalSuspMSOA-TotalVap;
+
+<span class="keyword">if</span> abs(MassBal) &gt; 1e-9
+    Error = <span class="string">'Mass balance is not correct!'</span>;
+<span class="keyword">end</span>
+
+FracMassToSuspended = TotalSuspMSOA/(TotalSuspMSOA+TotalWallMSOA)
+
+<span class="comment">%Calculate mole fractions of organics on particles--------------</span>
+<span class="keyword">for</span> p = 1:Pop
+   PopString = int2str(p);
+   XCpT_1 = CpT(:,(p-1)*n+3)./(CpT(:,(p-1)*n+1)+CpT(:,(p-1)*n+3));
+   XCpT_01 = CpT(:,(p-1)*n+1)./(CpT(:,(p-1)*n+1)+CpT(:,(p-1)*n+3));
+   eval([<span class="string">'Struct.P'</span> PopString <span class="string">'.XCpT_1 = XCpT_1;'</span>]);
+   eval([<span class="string">'Struct.P'</span> PopString <span class="string">'.XCpT_1 = XCpT_1;'</span>]);
+<span class="keyword">end</span>
+
+
+<span class="comment">% Theta = ones(TotalPop,TotalPop);</span>
+<span class="comment">% omegaCheck = ones(TotalPop,TotalPop);</span>
+<span class="comment">% for k = 2:TotalPop % for each population</span>
+<span class="comment">%     for i = 2:k % for each time</span>
+<span class="comment">%      Diam = DpT(EndIndex(i),k);</span>
+<span class="comment">%      Num = NumConcT(EndIndex(i) ,k);</span>
+<span class="comment">%      Theta(k-1,i-1) = Num/modelAtm.StoV*pi*Diam^2;</span>
+<span class="comment">%      omegaCheck(k-1,i-1) = 1/(1+Theta(k,i)/modelAtm.alpha_cr*FuchsK(2*modelAtm.SOA.lambda/Diam));</span>
+<span class="comment">%     end</span>
+<span class="comment">% end</span>
+
+<span class="comment">%Calculate omega numerically</span>
+<span class="keyword">for</span> i = 1:length(Tagg)
+   Dp3(i,1) = (DpT(i,1))^3;
+   omegaNum(i,1) = 1;
+<span class="keyword">end</span>
+
+<span class="keyword">for</span> i = 1:length(Tagg)-1
+    dDp3(i,1) = (Dp3(i+1,1)-Dp3(i,1));
+<span class="keyword">end</span>
+
+dDp3(length(Tagg),1) = dDp3(length(Tagg)-1,1);
+
+Dp3=zeros(EndIndex(Pop),Pop);
+<span class="keyword">for</span> p = 2:TotalPop
+
+    <span class="keyword">for</span> i = 1:length(Tagg)
+        Dp3(i,p) = (DpT(i,p))^3;
+    <span class="keyword">end</span>
+
+    <span class="keyword">for</span> i = 1:length(Tagg)-1
+        dDp3(i,p) = (Dp3(i+1,p)-Dp3(i,p));
+        omegaNum(i,p) = dDp3(i,p)/dDp3(i,1);
+    <span class="keyword">end</span>
+    dDp3(length(Tagg),p) = dDp3(length(Tagg)-1,p);
+    omegaNum(length(Tagg)) = omegaNum(length(Tagg)-1,p);
+
+    omegaOverall(p) = (Dp3(length(Tagg),p)^3-Dp3(1,p)^3)/(Dp3(length(Tagg),1)^3-Dp3(1,1)^3);
+<span class="keyword">end</span>
+
+CreateFigDiam;
+CreateMolFracFig;
+CreateFigNumConc;
+CreateFigOmega(Tagg, omegaNum);
+
+<span class="keyword">if</span> EmitBin ==1
+   DispEmitBin = 1e-2;
+<span class="keyword">elseif</span> EmitBin==3
+   DispEmitBin = 1e0;
+<span class="keyword">end</span>
+
+<span class="keyword">if</span> BGBin ==1
+   DispBGBin = 1e-2;
+<span class="keyword">elseif</span> BGBin==3
+   DispBGBin = 1e0;
+<span class="keyword">end</span>
+
+
+table.ROG = ROG;
+table.EmitTime = EmitTime/3600;
+table.EmitBin = DispEmitBin;
+table.BGBin = DispBGBin;
+table.TotalSusp = TotalSusp;
+table.TotalOnWall = TotalOnWall;
+table.kwall = modelAtm.kwall;
+table
+</pre><pre class="codeoutput">
+modelAtm = 
+
+          NumBins: 4
+              Pop: 2
+        total_cov: 0
+             Temp: 298
+            Press: 101350
+              air: [1x1 struct]
+       CStarBasis: [0.0100 0.1000 1 10]
+    EddyDiffCoeff: 0.3000
+             StoV: 0.3650
+             Area: 29
+         ChamberR: 1.4000
+            kwall: 1.0000e-04
+              ROG: 2.0000e-05
+         EmitTime: 7200
+          EmitBin: 1
+              SOA: [1x1 struct]
+             Sulf: [1x1 struct]
+             Pop1: [1x1 struct]
+              Cv0: [0 0 1 0]
+         MSOATot0: 3.0226
+             Pop2: [1x1 struct]
+         alpha_cr: 6.6401e-05
+     AgingResTime: 5
+
+
+TotalCS =
+
+    0.0103
+
+
+TotalD =
+
+   3.0558e+10
+
+
+TotalV =
+
+   2.0226e-12
+
+
+TotalS =
+
+   2.4120e-04
+
+
+TotalN =
+
+   3.0558e+10
+
+
+TotalOrgMass =
+
+    2.0226
+
+
+TotalCS =
+
+    0.0051
+
+
+TotalD =
+
+   1.5279e+10
+
+
+TotalV =
+
+   1.0113e-12
+
+
+...</pre><pre class="codeoutput">Error using ==&gt; get
+Invalid handle object.
+
+Error in ==&gt; snapnow&gt;snapFigure at 302
+        origValues = get(f,params);
+
+Error in ==&gt; snapnow&gt;leavingCell at 106
+    snapFigure( ...
+
+Error in ==&gt; snapnow at 61
+    data = leavingCell(iCell,data);
+
+</pre><p class="footer"><br>
+            Published with MATLAB&reg; 7.6<br></p>
+      </div>
+      <!--
+##### SOURCE BEGIN #####
+clear
+clc
+close all
+global modelAtm trackOmega trackCov
+global Tagg CpT DpT NumConcT Struct
+modelAtm.NumBins=4;
+n = modelAtm.NumBins;
+
+
+
+TimeVector = [0 10]*3600;
+EmitTime = 2*3600;
+%modelAtm.AgingResTime = 5; %hr  %NO aging when off
+
+FinalTime = TimeVector(length(TimeVector));
+TotalPop = length(TimeVector);
+modelAtm.Pop = TotalPop;
+modelAtm.total_cov = 0;
+
+trackOmega = zeros(1,modelAtm.Pop);
+trackCov = zeros(1,4);
+
+LoadAtmos;
+ROG = (1e-4)/5; % reacting organic rate [=] ug/m3-s
+EmitBin = 1;
+
+LoadSOAProps(ROG, EmitTime, EmitBin);
+SulfMassConc = eps; %Sulf concentration negligible
+LoadSulfProps(SulfMassConc);
+
+BGBin = 3; %C* bin of initial particles; 1 is C*=1e-2, 2 is C* =1e-1, 3 is C*=1e0, 4 is C*=1
+TotalSusp = 2;
+TagSusp = 2; %1 = specify #/m3    2=specify ug/m3
+LoadSuspendedPopulation(BGBin,TotalSusp,TagSusp);
+LoadPopulationProps(1); 
+TotalOnWall = 1;
+TagOnWall = 2; %1 = specify #/m3    2=specify ug/m3
+
+%This block of code is just to read in the ICs that are already specified
+%(LoadSuspendedParticles)REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+j=1;
+PopString = int2str(j);
+for i =1:n
+  eval(['Cp0(i) = modelAtm.Pop' PopString '.Cp0(i);'])  
+end
+eval(['Dp0(j) = modelAtm.Pop' PopString '.Dp0;'])
+%Dp0 = Dp0nm*1e-9;
+eval(['MSulf0(j) = modelAtm.Pop' PopString '.MSulf0;'])
+eval(['NumConc0(j) = modelAtm.Pop' PopString '.NumConc0;'])   
+%REPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH-
+    
+Cp0_new = eps*ones(1,n);
+Yagg = [];
+Tagg = [];
+Cv0 = modelAtm.Cv0;
+
+%total_cov = 0;
+for i=1:TotalPop-1
+    Pop = 1+i;
+    PopString = int2str(Pop);
+    
+    eval(['modelAtm.Pop' PopString '.Dp0 = Dp0(1);'])
+    %eval(['modelAtm.Pop' PopString '.MSulf0 = 0;'])
+    
+    LoadWallPopulation(Pop,BGBin,TotalOnWall,TagOnWall);
+    LoadPopulationProps(Pop);
+   % if Pop==2
+   %    BGCvPlus = LoadEqmVapors(modelAtm.Pop2.Cp0);
+   %    Cv0 = modelAtm.Cv0+BGCvPlus;
+   %    modelAtm.Cv0 = Cv0;
+   % end
+   
+    eval(['NumConc = modelAtm.Pop' PopString '.NumConc0;'])
+    eval(['Cp0_new = modelAtm.Pop' PopString '.Cp0;'])
+    
+ 
+    Cp0 = [Cp0 Cp0_new];
+    Dp0 = [Dp0 Dp0(1)];
+    MSulf0 = [MSulf0 eps];
+    NumConc0 = [NumConc0 NumConc];
+    
+    
+    tspan = [TimeVector(i) TimeVector(i+1)];
+    y0=[Cv0 Cp0 Dp0 MSulf0 NumConc0];
+    
+    [T,Y] = Main3(Pop,tspan,y0);
+    
+    if i==1
+        Yagg = Y;
+    elseif i>1
+        Yagg = [Yagg zeros(length(Yagg(:,1)),n+3); Y];
+    end
+  
+    Tagg = [Tagg; T];
+    EndIndex(Pop) = length(Tagg);
+    %EndIndex(1) = EndIndex(2);
+    Yfinal = Yagg(length(Tagg),:);
+    
+    
+    %Save final values of integration variables after run: these will be initial conditions
+    %for the next population
+    
+    Cv0 = Yfinal(1:n);
+    Cp0 = Yfinal((n+1):(n+n*Pop));    
+    In = length(Cp0);
+    for i = 1:n
+        Cp0_new(i) = Cp0(In+i-5); 
+    end
+    Dp0 = Yfinal(n*(Pop+1)+1:n*(Pop+1)+Pop);
+    MSulf0 = Yfinal(n*(Pop+1)+Pop+1:n*(Pop+1)+2*Pop);
+    NumConc0 = Yfinal(n*(Pop+1)+Pop*2+1:n*(Pop+1)+3*Pop);
+    
+end
+
+
+
+%modelAtm.Dpf = Dpf;
+EndIndex(1) = 0;
+
+CpT = zeros(0,n); DpT = zeros(0,1); MSulfT = zeros(0,1); NumConcT = zeros(0,1);
+
+CvT = Yagg(:,(1:n));
+
+for p = 2:Pop
+   Cp_new = Yagg(EndIndex(p-1)+1:EndIndex(p),n+1:(p+1)*n);
+   Dp_new = Yagg(EndIndex(p-1)+1:EndIndex(p), n*(p+1)+1:n*(p+1)+p);
+   MSulf_new = Yagg(EndIndex(p-1)+1:EndIndex(p), n*(p+1)+p+1:n*(p+1)+2*p);
+   NumConc_new = Yagg(EndIndex(p-1)+1:EndIndex(p), n*(p+1)+2*p+1:n*(p+1)+3*p);
+   
+   CpT = [CpT zeros(EndIndex(p-1),n); Cp_new];
+   DpT = [DpT zeros(EndIndex(p-1),1); Dp_new];
+   MSulfT = [MSulfT zeros(EndIndex(p-1),1); MSulf_new];
+   NumConcT = [NumConcT zeros(EndIndex(p-1),1); NumConc_new];
+   if Pop>2
+    omegaCalc(Pop) = (DpT(EndIndex(Pop),Pop)^3-DpT(EndIndex(Pop-1)+1,Pop)^3)/(DpT(EndIndex(Pop),1)^3-DpT(EndIndex(Pop-1)+1,1)^3);
+    else
+        omegaCalc(2) = (DpT(EndIndex(2),2)^3-DpT(1,2)^3)/(DpT(EndIndex(2),1)^3-DpT(1,1)^3);
+    end
+end
+
+omegaOverall = (DpT(EndIndex(modelAtm.Pop),2)^3-DpT(1,2)^3)/(DpT(EndIndex(modelAtm.Pop),1)^3-DpT(1,1)^3);
+
+
+
+%Check mass balanceREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+TotalSuspMSOA = 0;
+TotalWallMSOA = 0;
+TotalVap = 0;
+TotalWallNumConc = 0;
+
+for i = 2:TotalPop
+   TotalWallNumConc = TotalWallNumConc + NumConcT(length(NumConcT),i); 
+end
+
+for j=1:n
+    for i = 2:TotalPop
+        TotalWallMSOA = TotalWallMSOA + CpT(length(CpT),(i-1)*n+j);
+    end
+    TotalSuspMSOA = TotalSuspMSOA + CpT(length(CpT),j);
+    TotalVap = TotalVap + CvT(length(CpT),j);
+end
+
+MassBal = ROG*sum(modelAtm.SOA.alphaProd)*modelAtm.EmitTime+modelAtm.MSOATot0-TotalWallMSOA-TotalSuspMSOA-TotalVap;
+
+if abs(MassBal) > 1e-9
+    Error = 'Mass balance is not correct!';
+end
+
+FracMassToSuspended = TotalSuspMSOA/(TotalSuspMSOA+TotalWallMSOA)
+
+%Calculate mole fractions of organics on particlesREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASHREPLACE_WITH_DASH_DASH
+for p = 1:Pop
+   PopString = int2str(p);
+   XCpT_1 = CpT(:,(p-1)*n+3)./(CpT(:,(p-1)*n+1)+CpT(:,(p-1)*n+3));
+   XCpT_01 = CpT(:,(p-1)*n+1)./(CpT(:,(p-1)*n+1)+CpT(:,(p-1)*n+3));
+   eval(['Struct.P' PopString '.XCpT_1 = XCpT_1;']);
+   eval(['Struct.P' PopString '.XCpT_1 = XCpT_1;']);
+end
+  
+
+% Theta = ones(TotalPop,TotalPop);
+% omegaCheck = ones(TotalPop,TotalPop);
+% for k = 2:TotalPop % for each population
+%     for i = 2:k % for each time
+%      Diam = DpT(EndIndex(i),k);
+%      Num = NumConcT(EndIndex(i) ,k);
+%      Theta(k-1,i-1) = Num/modelAtm.StoV*pi*Diam^2;
+%      omegaCheck(k-1,i-1) = 1/(1+Theta(k,i)/modelAtm.alpha_cr*FuchsK(2*modelAtm.SOA.lambda/Diam));
+%     end
+% end
+
+%Calculate omega numerically
+for i = 1:length(Tagg)
+   Dp3(i,1) = (DpT(i,1))^3; 
+   omegaNum(i,1) = 1;
+end
+
+for i = 1:length(Tagg)-1
+    dDp3(i,1) = (Dp3(i+1,1)-Dp3(i,1));
+end
+
+dDp3(length(Tagg),1) = dDp3(length(Tagg)-1,1);
+
+Dp3=zeros(EndIndex(Pop),Pop);
+for p = 2:TotalPop
+
+    for i = 1:length(Tagg)
+        Dp3(i,p) = (DpT(i,p))^3;
+    end
+    
+    for i = 1:length(Tagg)-1
+        dDp3(i,p) = (Dp3(i+1,p)-Dp3(i,p));
+        omegaNum(i,p) = dDp3(i,p)/dDp3(i,1);
+    end
+    dDp3(length(Tagg),p) = dDp3(length(Tagg)-1,p);
+    omegaNum(length(Tagg)) = omegaNum(length(Tagg)-1,p);
+    
+    omegaOverall(p) = (Dp3(length(Tagg),p)^3-Dp3(1,p)^3)/(Dp3(length(Tagg),1)^3-Dp3(1,1)^3);
+end
+
+CreateFigDiam;
+CreateMolFracFig;
+CreateFigNumConc;
+CreateFigOmega(Tagg, omegaNum);
+
+if EmitBin ==1
+   DispEmitBin = 1e-2;
+elseif EmitBin==3
+   DispEmitBin = 1e0;
+end
+
+if BGBin ==1
+   DispBGBin = 1e-2;
+elseif BGBin==3
+   DispBGBin = 1e0;
+end
+
+
+table.ROG = ROG;
+table.EmitTime = EmitTime/3600;
+table.EmitBin = DispEmitBin;
+table.BGBin = DispBGBin;
+table.TotalSusp = TotalSusp;
+table.TotalOnWall = TotalOnWall;
+table.kwall = modelAtm.kwall;
+table
+
+
+
+
+##### SOURCE END #####
+-->
+   </body>
+</html>

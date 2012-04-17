@@ -1,0 +1,42 @@
+function LoadPopulations(Pop)
+
+global modelAtm
+
+%Define population parameters
+modelAtm.Pop1.NumConc0 = 2*1e25;
+modelAtm.Pop1.Dp0 = 50; %Mode of # distribution, (in nm)
+modelAtm.Pop2.NumConc0 = 10;
+%modelAtm.Pop2.NumConc = 1;
+modelAtm.Pop2.Dp0 = 50;
+modelAtm.Pop3.NumConc = 930*1e6;
+modelAtm.Pop3.Dp0 = 50;
+
+n = modelAtm.NumBins;
+Tag = 1;  %Tag =1, specify total number concentration
+FracOrg = 1; %Particles are entirely organic
+ %Total 1=# 2=SurfArea(m2) 3=Volume(m3) per m3
+ 
+for j = 1:Pop
+    if j==1
+       PopString = '1'; 
+    elseif j==2
+        PopString = '2';
+    elseif j==3
+        PopString = '3';
+    end
+
+    eval(['NumConc = modelAtm.Pop' PopString '.NumConc;'])
+    eval(['Diam = modelAtm.Pop' PopString '.Dp0;'])
+    [CondSinkBG BGCp MSulf] = LoadPopMono3(Tag,NumConc,Diam,FracOrg);
+    eval(['modelAtm.Pop' PopString '.CondSink0=CondSinkBG;'])  
+    eval(['modelAtm.Pop' PopString '.Cp0 = BGCp;'])
+    eval(['modelAtm.Pop' PopString '.MSulf0 = MSulf;'])
+end
+
+
+CpTot = zeros(1,n);
+for i = 1:n  
+    CpTot(i) = modelAtm.Pop1.Cp0(i)+modelAtm.Pop2.Cp0(i);  
+end
+
+modelAtm.Cv0 = LoadEqmVapors(CpTot);

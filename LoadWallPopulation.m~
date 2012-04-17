@@ -1,0 +1,25 @@
+function LoadWallPopulation(j)
+
+global modelAtm
+
+%n = modelAtm.NumBins;
+Tag = 1;  %Tag =1, specify total number concentration
+FracOrg = 1; %Particles are entirely organic
+ %Total 1=# 2=SurfArea(m2) 3=Volume(m3) per m3
+ 
+PopString = int2str(j);
+
+eval(['modelAtm.Pop' PopString '.NumConc0 = 1;'])
+
+eval(['NumConc = modelAtm.Pop' PopString '.NumConc0;'])
+eval(['Diam = modelAtm.Pop' PopString '.Dp0;'])
+[CondSinkBG BGCp MSulf] = LoadPopMono3(Tag,NumConc,Diam,FracOrg);
+eval(['modelAtm.Pop' PopString '.CondSink0=CondSinkBG;'])  
+eval(['modelAtm.Pop' PopString '.Cp0 = BGCp;'])
+eval(['modelAtm.Pop' PopString '.MSulf0 = MSulf;'])
+
+%Calculate coverage
+n_a = NumConc/modelAtm.StoV; % #/m2
+coverage = n_a*pi*Diam^2*shapeFact;
+
+eval(['modelAtm.Pop' PopString '.coverage = coverage;'])
