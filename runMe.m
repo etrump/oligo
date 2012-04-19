@@ -23,7 +23,7 @@ modelAtm.AlphaPYNVap = 1;
 modelAtm.DilutionYN = 1;
 modelAtm.DilutionTime = 5*3600;
 modelAtm.DF = 150;
-modelAtm.DF = 10; %120409
+%modelAtm.DF = 10; %120409
 
 %Set simulation parameters ----------------------------
 TimeVector = [0 10]*3600;
@@ -89,7 +89,7 @@ MSulf0 = MSulf0BG;
 NumConc0BG = TotalSusp;
 modelAtm.CS0 = CS0;
 
-modelAtm.V_small = 2;
+%modelAtm.V_small = 2;
 
 Cpre0 = modelAtm.Injection/modelAtm.V_small; % m3;
 

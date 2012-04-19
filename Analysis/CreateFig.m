@@ -157,8 +157,8 @@ area1 = area(Tagg/3600,ystack,'LineWidth',3);
 
 set(area1(1),'DisplayName','lC*=-15');
 set(area1(2),'DisplayName','lC*=-2');
-set(area1(3),'DisplayName','1C*-1')
-set(area1(4),'DisplayName','1C*=0')
+set(area1(3),'DisplayName','1C*-1');
+set(area1(4),'DisplayName','1C*=0');
 set(area1(5),'DisplayName','1C*=1');
 set(area1(6),'DisplayName','lC*=2');
 set(area1(7),'DisplayName','lC*=3');
