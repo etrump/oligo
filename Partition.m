@@ -8,7 +8,7 @@ global modelAtm
 
 
 Cstar = modelAtm.CStarBasis
-C = Mass_reacted*modelAtm.SOA.alphaProd*1/modelAtm.Vol
+C = Mass_reacted*modelAtm.SOA.alphaProd*1/modelAtm.V_small
 maxiter = 1e5;
 tol = 1e-15;
 Coa = 1; %initial guess

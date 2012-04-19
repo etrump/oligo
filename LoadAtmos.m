@@ -31,3 +31,5 @@ modelAtm.kwall = 1e-4; %Neil suggested this value, like Albert's experiments
 %modelAtm.kwall = 0;
 
 modelAtm.AgingResTime = 5;
+
+modelAtm.V_small = 0.1; % m3

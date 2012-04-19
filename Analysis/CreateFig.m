@@ -155,6 +155,18 @@ ystack = [CpT(:,1) CpT(:,2) CpT(:,3) CpT(:,4) CpT(:,5) CpT(:,6) CpT(:,7) ...
 %ystack = [CpT(:,1) CpT(:,8),CpT(:,9),CpT(:,10)];
 area1 = area(Tagg/3600,ystack,'LineWidth',3);
 
+set(area1(1),'DisplayName','lC*=-15');
+set(area1(2),'DisplayName','lC*=-2');
+set(area1(3),'DisplayName','1C*-1')
+set(area1(4),'DisplayName','1C*=0')
+set(area1(5),'DisplayName','1C*=1');
+set(area1(6),'DisplayName','lC*=2');
+set(area1(7),'DisplayName','lC*=3');
+set(area1(8),'DisplayName','lC*=4');
+set(area1(9),'DisplayName','lC*=5');
+set(area1(10),'DisplayName','lC*=6');
+legend1 = legend(axes1,'show');
+
 paperSize = [5 4];
 set(gcf,'Units','inches');
 pos = get(gcf,'Position');

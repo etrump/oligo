@@ -16,13 +16,14 @@ modelAtm.AgingYN = 1;
 modelAtm.AmmonSeedYN = 1;
 modelAtm.AmmonSeedYNPop2 = 1;
 modelAtm.PulseYN = 0;
-modelAtm.KelvinYN = 0; %!!!!!!!
+modelAtm.KelvinYN = 1; %!!!!!!!
 modelAtm.AlphaPYN = 0; %Alpha pinene organic = 1; single-bin organic = 0;
 modelAtm.AlphaPYNPop2 = 0;
 modelAtm.AlphaPYNVap = 1;
-modelAtm.DilutionYN = 0;
+modelAtm.DilutionYN = 1;
 modelAtm.DilutionTime = 5*3600;
 modelAtm.DF = 150;
+modelAtm.DF = 10; %120409
 
 %Set simulation parameters ----------------------------
 TimeVector = [0 10]*3600;
@@ -31,8 +32,7 @@ TimeVector = [0 10]*3600;
 EmitTime = 3*3600;
 modelAtm.EmitTime = EmitTime;
 modelAtm.DecayConstant = 0.171;     %hr-1
-%modelAtm.DecayConstant = 0.1;
-modelAtm.Injection = 3e3;        %ug/m3
+
 modelAtm.Injection = 1287;
 modelAtm.Injection = 429; %120326
 modelAtm.AgingResTime = 5;      %hr  
@@ -50,6 +50,7 @@ TotalSusp = 3e9; %exper on 120202
 TotalSusp = 1e10*100;
 TotalSusp = 4.5e11;
 TotalSusp = 3.79e11;%120326
+TotalSusp = 3.7943e+11; %120409
 TagSusp = 1; %1 = specify #/m3    2=specify ug/m3
 
 TotalOnWall = eps;
@@ -80,7 +81,6 @@ for i = 1:modelAtm.TotalPopBG
     LoadPopulationProps(i); % what is this for?
 end
 %modelAtm.Cv01=LoadEqmVapors2(ceil(modelAtm.TotalPopBG/2+1));
-%%modelAtm.Cv01=LoadEqmVapors2(1);
 %modelAtm.Cv0 = modelAtm.Cv01;
 modelAtm.Cv0 = zeros(1,n);
 Dp0 = Dp0BG;
@@ -89,22 +89,20 @@ MSulf0 = MSulf0BG;
 NumConc0BG = TotalSusp;
 modelAtm.CS0 = CS0;
 
-Cpre0 = modelAtm.Injection;
+modelAtm.V_small = 2;
 
+Cpre0 = modelAtm.Injection/modelAtm.V_small; % m3;
 
 modelAtm.Pop = 1+modelAtm.TotalPopBG;
 modelAtm.Pop = 1;
 modelAtm.total_cov = 0;
 trackCov = zeros(1,4);    
-modelAtm.MSOATot0 = sum(modelAtm.Pop1.Cp0)+sum(modelAtm.Cv0);
 
 Cp0_new = eps*ones(1,n);
 Yagg = [];
 Tagg = [];
 Yagg_true = [];
-Cv0 = modelAtm.Cv0;
-DpNP = 50;
-    
+Cv0 = modelAtm.Cv0;    
 
 Dp0 = DiamSusp*1e-9;
     

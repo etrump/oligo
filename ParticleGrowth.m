@@ -43,14 +43,16 @@ K = 5000; % from a = 0.005 and b = 0.15.... K = b/a^2
 k_age_r = 5e-5; %kr is fixed
 k_age_f = K*k_age_r;
 
-k_age_f = 0.1;
-k_age_f = 0.5;
+k_age_f = 0.05;
+%k_age_f = 0.5;
+k_age_f2 = k_age_f;
 
 modelAtm.k_age_f = k_age_f;
 
 if sum(Cp)>1e-5
     %R_age_f = k_age_f*(Cp(9)/sum(Cp))^2;
     R_age_f = k_age_f*Cp(dimerbin)^2;
+    R_age_f2 = k_age_f2*Cp(dimerbin)^2;
     %R_age_r = k_age_r*(Cp(1)/sum(Cp));
     R_age_r = k_age_r*Cp(1);
 else
