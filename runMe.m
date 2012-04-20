@@ -23,7 +23,7 @@ modelAtm.AlphaPYNVap = 1;
 modelAtm.DilutionYN = 1;
 modelAtm.DilutionTime = 5*3600;
 modelAtm.DF = 150;
-%modelAtm.DF = 10; %120409
+modelAtm.DF = 10; %120409
 
 %Set simulation parameters ----------------------------
 TimeVector = [0 10]*3600;
@@ -51,6 +51,7 @@ TotalSusp = 1e10*100;
 TotalSusp = 4.5e11;
 TotalSusp = 3.79e11;%120326
 TotalSusp = 3.7943e+11; %120409
+TotalSusp = 3.7943e+10; %120409 TESTING
 TagSusp = 1; %1 = specify #/m3    2=specify ug/m3
 
 TotalOnWall = eps;
@@ -89,7 +90,7 @@ MSulf0 = MSulf0BG;
 NumConc0BG = TotalSusp;
 modelAtm.CS0 = CS0;
 
-%modelAtm.V_small = 2;
+modelAtm.V_small = 2;
 
 Cpre0 = modelAtm.Injection/modelAtm.V_small; % m3;
 

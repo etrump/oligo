@@ -44,6 +44,7 @@ k_age_r = 5e-5; %kr is fixed
 k_age_f = K*k_age_r;
 
 k_age_f = 0.00001;
+k_age_f = 0.005;
 %k_age_f = 0.05;
 %%%k_age_f = 0.5;
 k_age_f2 = k_age_f;
@@ -159,7 +160,7 @@ for i=1:n
     
    Phi(i) = QPhi(i);
    
-   Dp_cut = 100;
+  % Dp_cut = 5;
   % if i == modelAtm.EmitBin
   % if ((Phi(i) < 0) && (Dp*1e9 < Dp_cut))
   %     Phi(i) = 0;

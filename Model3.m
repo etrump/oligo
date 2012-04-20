@@ -29,8 +29,14 @@ dY(n*(1+Pop)+2*Pop+1) = -1*ROG;
 %Load current values of integration variables -----------
 for i=1:n
     Cv(i)=Y(i);  
+    if Cv(i)<=0 || Cv(i)~=Cv(i) 
+        Cv(i) = 0; % Borrowed from Evaporation mfile
+    end
     for j=1:Pop
         Cp(j,i)=Y(j*n+i);
+        if Cp(j,i)<=0 || Cp(i) ~= Cp(i)
+            Cp(j,i) = 0;% Borrowed from Evaporation mfile
+        end
     end
 end
 
@@ -47,7 +53,7 @@ FracSulfSusp = M_Sulf(1)/(M_Sulf(1)+M_SOA(1));
 for j=1:Pop
     PopString = int2str(j);
     eval(['modelAtm.Pop' PopString '.Dp = Dp(j);'])
-    eval(['NumConc(j) = modelAtm.Pop' PopString '.NumConc0;']);
+    eval(['NumConc(j) = modelAtm.Pop' PopString '.NumConc0;']);%no particle # change
 end
 
 
@@ -85,29 +91,8 @@ for j=1:Pop
 end
 %CondSinkTot(2) = CondSinkTot2(2);
 
-In = length(trackCondSink(:,1))+1;
-%trackCondSink(In,1) = t;
-%trackCondSink(In,2) = CondSinkTot(1);
-%trackCondSink(In,3) = CondSinkTot(2);
-%trackCondSink(In,4) = TotalMass(1)/CondSinkTot(1);
-%trackCondSink(In,5) = TotalMass(2)/CondSinkTot(2);
-%trackCondSink(In,6) = TotalMass(1);
-%trackCondSink(In,7) = TotalMass(2);
 
-% %Consider aging of C* = 1 vapors
-% ResTime = 2; %hour
 CpAging = zeros(1,n);
-
-%k_age = 3e-15;
-%R_age = k_age*Cp(1,5)^2*3600;
-%modelAtm.R_age = R_age;
-%CpAging(1) = R_age;
-%CpAging(5) = -R_age;
-% CvAging(3) = -1*Cv(3)*1/(3600*ResTime);
-% CvAging(1) = -1*CvAging(3);
-% CvAging(2) = 0; 
-% CvAging(4) = 0; 
-% %CvAging = zeros(1,n); %No aging
 
 
 %Calculates organic flux to bulk particles---------------------------
@@ -126,12 +111,6 @@ for j=1:Pop
     J_SOA_Cond(j) = sum(dCp);
 end
    
-%trackCondSink(In,8) = J_SOA(1)/CondSinkTot(1);
-%trackCondSink(In,9) = J_SOA(2)/CondSinkTot(2);
-%trackCondSink(In,10) = J_SOA(1);
-%trackCondsink(In,11) = J_SOA(2)*1e10;
-
-%itis = J_SOA(2)
 
 for i=1:n
     dY(i) = sum(dCvStack(:,i));
@@ -161,10 +140,6 @@ for j=1:Pop
     dY((Pop+1)*n+j)=dDp0(j);
 end
     
-%trackCondSink(In,8) = J_All(1)/CondSinkTot(1);
-%trackCondSink(In,9) = J_All(2)/CondSinkTot(2);
-%trackCondSink(In,10) = J_All(1);
-%trackCondsink(In,11) = J_All(2)*1e10;
 
 
 
