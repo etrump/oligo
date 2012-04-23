@@ -44,8 +44,8 @@ k_age_r = 5e-5; %kr is fixed
 k_age_f = K*k_age_r;
 
 k_age_f = 0.00001;
-k_age_f = 0.005;
-%k_age_f = 0.05;
+k_age_f = 0.025;
+k_age_f = 0.0001;
 %%%k_age_f = 0.5;
 k_age_f2 = k_age_f;
 

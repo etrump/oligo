@@ -57,15 +57,15 @@ density_norm = modelAtm.SOA.rho / 1e12;
  AMF(i) = Coa/sum(C);
  C
  Coa
- %break;
- AMF_adj(i) = Coa/sum(C)*1/density_norm;  
+ break;
+ AMF_adj(i) = Coa./C*1/density_norm;  
  
 end
 
 figure(97)
 %plot(C_SOA,AMF)
 %plot(C_SOA,Yeild_SOA)
-semilogx(C_SOA,AMF_adj)
+semilogx(C_SOA,Yeild_SOA)
 hold on
 axis([0.01 1e4 0 0.4]);
 

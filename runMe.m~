@@ -34,8 +34,8 @@ modelAtm.EmitTime = EmitTime;
 modelAtm.DecayConstant = 0.171;     %hr-1
 
 modelAtm.Injection = 1287;
-modelAtm.Injection = 429/3; %120326
-%modelAtm.Injection = 15;
+modelAtm.Injection = 429/10; %120326
+%modelAtm.Injection = 17;
 
 modelAtm.AgingResTime = 5;      %hr  
 
@@ -53,7 +53,7 @@ TotalSusp = 1e10*100;
 TotalSusp = 4.5e11;
 TotalSusp = 3.79e11;%120326
 TotalSusp = 3.7943e+11; %120409
-%TotalSusp = 3.7943e+10; %120409 TESTING
+TotalSusp = 3.7943e+10; %120409 TESTING
 TagSusp = 1; %1 = specify #/m3    2=specify ug/m3
 
 TotalOnWall = eps;
